@@ -1,0 +1,20 @@
+strategy:
+  id: reversal_credit_v1
+  underlying: NIFTY
+  exchange: NSE
+  derivative_exchange: NFO
+  quantity: {lots: 1}
+  expiry: {type: weekly, offset: 0, allow_expiry_day_entry: true, minimum_days_to_expiry: 0}
+  strikes: {selection: option_chain_atm, strike_step: auto, hedge_enabled: true, hedge_distance_strikes: 6}
+  trigger: {reference_time: '09:15:00', percentage: 0.005, scan_start: '10:00:00', entry_cutoff: '14:30:00', ambiguous_candle_action: skip}
+  entry: {timing: next_executable_quote, minimum_net_credit_points: 0, maximum_quote_age_seconds: 5}
+  exits:
+    profit_target: {enabled: true, type: percentage_of_initial_credit, value: 1.0}
+    stop_loss: {enabled: true, type: percentage_of_initial_credit, value: 0.3}
+    fixed_currency_stop: {enabled: false, value: 4000}
+    stop_precedence: first_triggered
+    intraday_only: false
+    expiry_hard_exit: '15:20:00'
+    expiry_exit_deadline: '15:25:00'
+  execution: {fill_model: bid_ask, slippage_ticks: 1, partial_fills: true}
+  costs: {brokerage_per_order: 0, include_taxes_and_exchange_charges: false}

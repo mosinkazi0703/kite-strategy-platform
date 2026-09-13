@@ -1,0 +1,10 @@
+from dataclasses import dataclass
+@dataclass(frozen=True)
+class Fill: price: float; quantity: int; slippage: float = 0
+class BidAskFillModel:
+    def __init__(self, slippage_ticks=0, tick_size=0.05): self.slippage_ticks=slippage_ticks; self.tick_size=tick_size
+    def fill(self, intent, quote):
+        price = quote.executable_buy if intent.side == "BUY" else quote.executable_sell
+        if price is None: return None
+        slip = self.slippage_ticks * self.tick_size
+        return Fill(price + slip if intent.side == "BUY" else price - slip, intent.quantity, slip)
