@@ -7,3 +7,4 @@ runtime/
 *.log
 access_token*
 token*
+*.egg-info/
