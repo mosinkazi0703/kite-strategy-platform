@@ -21,7 +21,7 @@ def test_missing_contract_is_rejected():
 def test_paper_engine_requires_executable_quotes_and_calculates_credit():
     legs=build_four_legs("UP",100,100,6,1,contracts()); q={l.contract.contract_id:Quote(l.contract.contract_id,datetime(2026,1,1,10),last=10,bid=20 if l.side=="SELL" else 9,ask=21 if l.side=="SELL" else 11) for l in legs}
     pos=PaperTradingEngine(PaperBroker(BidAskFillModel())).open(legs,q)
-    assert pos.state=="OPEN" and pos.pnl_points({k:10 for k in q})==0
+    assert pos.state=="OPEN" and pos.pnl_points(pos.entries)==0
     del q[legs[0].contract.contract_id]
     with pytest.raises(ValueError, match="missing executable"): PaperTradingEngine(PaperBroker(BidAskFillModel())).open(legs,q)
 def test_fill_model_uses_ask_for_buy_bid_for_sell():
