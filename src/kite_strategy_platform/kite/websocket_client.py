@@ -18,3 +18,5 @@ class KiteWebSocketClient:
             except Exception as exc:
                 if not self.reconnect or retries>=self.max_retries: raise
                 retries += 1; log.warning("websocket reconnect attempt=%s error=%s", retries, type(exc).__name__); time.sleep(min(2**retries,30))
+    def subscribe(self, ws, tokens, mode="full"):
+        ws.send(json.dumps({"a":"subscribe","v":list(tokens)})); ws.send(json.dumps({"a":"mode","v":[mode,list(tokens)]}))
