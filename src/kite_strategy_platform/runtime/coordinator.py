@@ -25,6 +25,9 @@ class PaperTradingCoordinator:
     def build_option_universe(self,today,timeframe="weekly",strike_step=None,hedge_distance=6):
         if self.stage!="OPEN_CAPTURED": raise RuntimeError("09:15 opening price required")
         symbol=self.configs[0]["strategy"]["underlying"]; self.composition=LivePaperComposition(self.rows,symbol,self.root); u=self.composition.build_universe(self.opening_price,today,timeframe,strike_step,hedge_distance); self.stage="OPTIONS_SUBSCRIBED"; return u
+    def resolved_subscription_pairs(self, today):
+        universe=self.build_option_universe(today)
+        return [(c.instrument_token,c.contract_id) for c in universe.contracts]
     def start_paper(self):
         if self.stage!="OPTIONS_SUBSCRIBED": raise RuntimeError("option universe must be built first")
         self.stage="RUNNING"; return self.composition

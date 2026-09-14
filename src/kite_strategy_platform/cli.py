@@ -25,7 +25,14 @@ def main():
         coordinator=PaperTradingCoordinator(os.environ["KITE_API_KEY"],os.environ["KITE_ACCESS_TOKEN"],a.root,a.config_dir)
         coordinator.load_instruments(); coordinator.subscribe_underlying_first()
         app=UnattendedPaperApplication([coordinator.underlying_token],a.root,a.config_dir)
-        app.collector.on_quote=coordinator.on_underlying_quote
+        def route_quote(quote):
+            opening=coordinator.on_underlying_quote(quote)
+            if opening is not None:
+                from datetime import date
+                app.collector.expand(coordinator.resolved_subscription_pairs(date.today()))
+                coordinator.start_paper()
+            if coordinator.composition: coordinator.composition.on_quote(quote)
+        app.collector.on_quote=route_quote
         app.run()
     elif a.command == "self-test-paper":
         from .runtime.synthetic import run_synthetic_paper
