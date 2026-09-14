@@ -19,7 +19,8 @@ class PaperTradingCoordinator:
         self.underlying_token=int(rows[0]["instrument_token"]); self.stage="UNDERLYING_SUBSCRIBED"; return (self.underlying_token,)
     def capture_open(self,quote):
         if self.stage!="UNDERLYING_SUBSCRIBED": raise RuntimeError("underlying must be subscribed first")
-        if quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata")).time().replace(second=0,microsecond=0).isoformat()!="09:15": raise ValueError("reference quote must be from 09:15 Asia/Kolkata")
+        local=quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata")).time()
+        if (local.hour,local.minute)!=(9,15): raise ValueError("reference quote must be from 09:15 Asia/Kolkata")
         self.opening_price=quote.last; self.stage="OPEN_CAPTURED"; return self.opening_price
     def build_option_universe(self,today,timeframe="weekly",strike_step=None,hedge_distance=6):
         if self.stage!="OPEN_CAPTURED": raise RuntimeError("09:15 opening price required")
