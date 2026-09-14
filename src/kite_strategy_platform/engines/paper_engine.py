@@ -11,7 +11,7 @@ class Position:
             total += -diff if leg.side=="SELL" else diff
         return total
 class PaperTradingEngine:
-    def __init__(self, broker, target=1.0, stop=0.3, margin_client=None, max_margin=None): self.broker=broker; self.target=target; self.stop=stop; self.margin_client=margin_client; self.max_margin=max_margin
+    def __init__(self, broker, target=1.0, stop=0.3, margin_client=None, max_margin=None, allow_debit=False): self.broker=broker; self.target=target; self.stop=stop; self.margin_client=margin_client; self.max_margin=max_margin; self.allow_debit=allow_debit
     def open(self, legs, quotes):
         margin=self.margin_client.margin_for_legs(legs) if self.margin_client else None
         required=(margin or {}).get("final",(margin or {}).get("initial",(margin or {}).get("total"))) if isinstance(margin,dict) else None
@@ -22,5 +22,5 @@ class PaperTradingEngine:
             if not fill: raise ValueError(f"missing executable entry quote: {leg.contract.contract_id}")
             entries[leg.contract.contract_id]=fill.price
         credit=sum(entries[l.contract.contract_id] * (-1 if l.side=="BUY" else 1) for l in legs)
-        if credit<=0: raise ValueError("non-positive net credit")
+        if credit<=0 and not self.allow_debit: raise ValueError("non-positive net credit")
         position=Position(legs,entries); position.margin=margin; return position
