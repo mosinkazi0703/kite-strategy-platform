@@ -6,6 +6,7 @@ from typing import Sequence
 class Quote:
     contract_id: str; timestamp: datetime; last: float | None = None
     bid: float | None = None; ask: float | None = None; volume: int = 0; open_interest: int | None = None
+    depth: tuple = ()
     @property
     def executable_buy(self): return self.ask
     @property

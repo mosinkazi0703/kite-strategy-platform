@@ -15,3 +15,11 @@ class AppendOnlyStore:
             frame.to_parquet(tmp, index=False); os.replace(tmp,path)
         except ImportError:
             raise RuntimeError("Parquet storage requires pandas and pyarrow")
+    def append_table(self, relative, records):
+        try:
+            import pandas as pd
+            path=self.root/relative
+            old=pd.read_parquet(path) if path.exists() else pd.DataFrame()
+            self.write_table(relative,pd.concat([old,pd.DataFrame(records)],ignore_index=True).to_dict("records"))
+        except ImportError:
+            raise RuntimeError("Parquet storage requires pandas and pyarrow")

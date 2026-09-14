@@ -14,7 +14,8 @@ class LiveCollector:
             minute=q.timestamp.replace(second=0,microsecond=0); previous=self.last_minute.get(q.contract_id)
             if previous and previous < minute:
                 candle=self.builder.close(q.contract_id,previous)
-                if candle: self.store.append_jsonl("data/candles/candles.jsonl",[candle.__dict__])
+                if candle:
+                    day=previous.date().isoformat(); self.store.append_table(f"data/candles/interval=1minute/trading_date={day}/candles.parquet",[candle.__dict__])
             self.last_minute[q.contract_id]=minute
         if rows: self.store.append_jsonl("data/raw_ticks/ticks.jsonl",rows)
     def run(self):
