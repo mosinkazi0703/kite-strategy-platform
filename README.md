@@ -28,6 +28,8 @@ $env:PYTHONPATH = "src"
 
 Ticks are appended to `runtime/data/raw_ticks/ticks.jsonl`; completed candles are partitioned under `runtime/data/candles/interval=1minute/trading_date=YYYY-MM-DD/candles.parquet`. No order API is called.
 
+Use `list-strategies` to inspect enabled strategy configurations. `PaperSession` persists append-only events/trades and a daily report under `runtime/paper/`. The collector exposes each normalized quote to a shared session callback so multiple strategies can consume one market-data stream.
+
 The paper engine also includes `DynamicCalendarSpread` in `config/strategy_calendar_spread.yaml`: it buys the farther-expiry CE and sells the nearer-expiry CE, selects expiries from actual master data, exits on target/IV collapse/market close, and exposes a configurable delta threshold for optional futures hedging.
 
 See `docs/STRATEGY_RULES.md`, `docs/DATA_SCHEMA.md`, and `docs/OPERATIONS.md` for the implementation contract and smoke-test checklist.

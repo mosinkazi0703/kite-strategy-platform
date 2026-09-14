@@ -4,6 +4,7 @@ def main():
     p=argparse.ArgumentParser(); sub=p.add_subparsers(dest="command", required=True)
     v=sub.add_parser("validate"); v.add_argument("--strategy", default="config/strategy_reversal_credit.yaml"); v.add_argument("--trading", default="config/paper_trading.yaml")
     s=sub.add_parser("start-paper"); s.add_argument("--tokens", nargs="+", type=int); s.add_argument("--root", default=os.getenv("KITE_RUNTIME_ROOT","runtime"))
+    r=sub.add_parser("list-strategies"); r.add_argument("--config-dir",default="config")
     a=p.parse_args()
     if a.command == "validate": print(load_config(a.strategy, a.trading).model_dump_json(indent=2))
     elif a.command == "start-paper":
@@ -12,3 +13,7 @@ def main():
         if not tokens: raise SystemExit("provide --tokens or KITE_INSTRUMENT_TOKENS")
         from .collector.live import LiveCollector
         LiveCollector(tokens,a.root).run()
+    elif a.command == "list-strategies":
+        from .runtime.loader import load_enabled_strategies
+        for item in load_enabled_strategies(a.config_dir):
+            if item.get("enabled"): print(item.get("strategy",{}).get("id",item["_path"]))
