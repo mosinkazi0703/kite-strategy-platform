@@ -5,8 +5,8 @@ from .candle_builder import MinuteCandleBuilder
 from kite_strategy_platform.kite.websocket_client import KiteWebSocketClient
 from kite_strategy_platform.kite.tick_decoder import decode_packets
 class LiveCollector:
-    def __init__(self,tokens,root="runtime",mode="full",on_quote=None):
-        self.tokens=tokens; self.store=AppendOnlyStore(root); self.builder=MinuteCandleBuilder(); self.sequence=0; self.token_to_contract={t:str(t) for t in tokens}; self.mode=mode; self.last_minute={}; self.on_quote=on_quote
+    def __init__(self,tokens,root="runtime",mode="full",on_quote=None,on_candle=None):
+        self.tokens=tokens; self.store=AppendOnlyStore(root); self.builder=MinuteCandleBuilder(); self.sequence=0; self.token_to_contract={t:str(t) for t in tokens}; self.mode=mode; self.last_minute={}; self.on_quote=on_quote; self.on_candle=on_candle
     def on_frame(self,frame,session_id):
         rows=[]
         for q in decode_packets(frame,self.token_to_contract):
@@ -17,6 +17,7 @@ class LiveCollector:
                 candle=self.builder.close(q.contract_id,previous)
                 if candle:
                     day=previous.date().isoformat(); self.store.append_table(f"data/candles/interval=1minute/trading_date={day}/candles.parquet",[candle.__dict__])
+                    if self.on_candle: self.on_candle(candle)
             self.last_minute[q.contract_id]=minute
         if rows: self.store.append_jsonl("data/raw_ticks/ticks.jsonl",rows)
     def run(self):
