@@ -1,0 +1,5 @@
+instruments:
+  underlying: NIFTY
+  exchange: NSE
+  derivative_exchange: NFO
+  snapshot_required: true
