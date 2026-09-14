@@ -5,6 +5,7 @@ def main():
     v=sub.add_parser("validate"); v.add_argument("--strategy", default="config/strategy_reversal_credit.yaml"); v.add_argument("--trading", default="config/paper_trading.yaml")
     s=sub.add_parser("start-paper"); s.add_argument("--tokens", nargs="+", type=int); s.add_argument("--root", default=os.getenv("KITE_RUNTIME_ROOT","runtime"))
     allp=sub.add_parser("run-all"); allp.add_argument("--tokens", nargs="+", type=int); allp.add_argument("--root", default=os.getenv("KITE_RUNTIME_ROOT","runtime")); allp.add_argument("--config-dir",default="config")
+    demo=sub.add_parser("self-test-paper"); demo.add_argument("--root",default="runtime")
     r=sub.add_parser("list-strategies"); r.add_argument("--config-dir",default="config")
     a=p.parse_args()
     if a.command == "validate": print(load_config(a.strategy, a.trading).model_dump_json(indent=2))
@@ -20,6 +21,9 @@ def main():
         if not tokens: raise SystemExit("provide --tokens or KITE_INSTRUMENT_TOKENS")
         from .runtime.application import UnattendedPaperApplication
         UnattendedPaperApplication(tokens,a.root,a.config_dir).run()
+    elif a.command == "self-test-paper":
+        from .runtime.synthetic import run_synthetic_paper
+        print(run_synthetic_paper(a.root))
     elif a.command == "list-strategies":
         from .runtime.loader import load_enabled_strategies
         for item in load_enabled_strategies(a.config_dir):
