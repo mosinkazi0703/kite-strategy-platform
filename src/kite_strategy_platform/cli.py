@@ -58,3 +58,6 @@ def main():
         from .runtime.loader import load_enabled_strategies
         for item in load_enabled_strategies(a.config_dir):
             if item.get("enabled"): print(item.get("strategy",{}).get("id",item["_path"]))
+
+if __name__ == "__main__":
+    main()
