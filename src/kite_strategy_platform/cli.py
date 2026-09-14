@@ -25,14 +25,29 @@ def main():
         coordinator=PaperTradingCoordinator(os.environ["KITE_API_KEY"],os.environ["KITE_ACCESS_TOKEN"],a.root,a.config_dir)
         coordinator.load_instruments(); coordinator.subscribe_underlying_first()
         app=UnattendedPaperApplication([coordinator.underlying_token],a.root,a.config_dir)
+        lifecycle=None
         def route_quote(quote):
+            nonlocal lifecycle
             opening=coordinator.on_underlying_quote(quote)
             if opening is not None:
                 from datetime import date
                 app.collector.expand(coordinator.resolved_subscription_pairs(date.today()))
-                coordinator.start_paper()
-            if coordinator.composition: coordinator.composition.on_quote(quote)
+                composition=coordinator.start_paper()
+                from .runtime.lifecycle import PaperLifecycle
+                lifecycle=PaperLifecycle(composition.session,composition.universe)
+            if coordinator.composition:
+                coordinator.composition.on_quote(quote)
+                if lifecycle and "dynamic_calendar_spread_v1" not in lifecycle.positions:
+                    required={c.contract_id for c in coordinator.composition.universe.contracts}
+                    if required.issubset(coordinator.composition.quotes): lifecycle.calendar_entry(coordinator.composition.quotes)
+                if lifecycle: lifecycle.mark(coordinator.composition.quotes,quote.timestamp)
+        def route_candle(candle):
+            if not lifecycle or candle.contract_id != str(coordinator.underlying_token): return
+            trigger=coordinator.handlers["reversal_credit_v1"].trigger(coordinator.opening_price,candle)
+            if trigger and trigger.direction in ("UP","DOWN") and "reversal_credit_v1" not in lifecycle.positions:
+                lifecycle.reversal_entry(trigger.direction,coordinator.composition.quotes)
         app.collector.on_quote=route_quote
+        app.collector.on_candle=route_candle
         app.run()
     elif a.command == "self-test-paper":
         from .runtime.synthetic import run_synthetic_paper
