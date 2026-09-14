@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from kite_strategy_platform.runtime.composition import LivePaperComposition
 from kite_strategy_platform.runtime.registry import create_handlers
 from kite_strategy_platform.runtime.loader import load_enabled_strategies
@@ -18,7 +19,7 @@ class PaperTradingCoordinator:
         self.underlying_token=int(rows[0]["instrument_token"]); self.stage="UNDERLYING_SUBSCRIBED"; return (self.underlying_token,)
     def capture_open(self,quote):
         if self.stage!="UNDERLYING_SUBSCRIBED": raise RuntimeError("underlying must be subscribed first")
-        if quote.timestamp.astimezone().time().replace(second=0,microsecond=0).isoformat()!="09:15": raise ValueError("reference quote must be from 09:15")
+        if quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata")).time().replace(second=0,microsecond=0).isoformat()!="09:15": raise ValueError("reference quote must be from 09:15 Asia/Kolkata")
         self.opening_price=quote.last; self.stage="OPEN_CAPTURED"; return self.opening_price
     def build_option_universe(self,today,timeframe="weekly",strike_step=None,hedge_distance=6):
         if self.stage!="OPEN_CAPTURED": raise RuntimeError("09:15 opening price required")
