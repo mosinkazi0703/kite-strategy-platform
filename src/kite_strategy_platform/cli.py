@@ -20,8 +20,13 @@ def main():
         if os.getenv("KITE_TRADING_MODE","paper") != "paper": raise SystemExit("refusing to start: paper mode required")
         tokens=a.tokens or [int(x) for x in os.getenv("KITE_INSTRUMENT_TOKENS","").split(",") if x.strip()]
         if not tokens: raise SystemExit("provide --tokens or KITE_INSTRUMENT_TOKENS")
+        from .runtime.coordinator import PaperTradingCoordinator
         from .runtime.application import UnattendedPaperApplication
-        UnattendedPaperApplication(tokens,a.root,a.config_dir).run()
+        coordinator=PaperTradingCoordinator(os.environ["KITE_API_KEY"],os.environ["KITE_ACCESS_TOKEN"],a.root,a.config_dir)
+        coordinator.load_instruments(); coordinator.subscribe_underlying_first()
+        app=UnattendedPaperApplication([coordinator.underlying_token],a.root,a.config_dir)
+        app.collector.on_quote=coordinator.on_underlying_quote
+        app.run()
     elif a.command == "self-test-paper":
         from .runtime.synthetic import run_synthetic_paper
         print(run_synthetic_paper(a.root))

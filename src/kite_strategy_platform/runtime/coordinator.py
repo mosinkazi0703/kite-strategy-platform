@@ -28,3 +28,8 @@ class PaperTradingCoordinator:
     def start_paper(self):
         if self.stage!="OPTIONS_SUBSCRIBED": raise RuntimeError("option universe must be built first")
         self.stage="RUNNING"; return self.composition
+    def on_underlying_quote(self, quote):
+        if self.stage=="UNDERLYING_SUBSCRIBED" and quote.last is not None:
+            local=quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata"))
+            if (local.hour,local.minute)==(9,15): return self.capture_open(quote)
+        return None
