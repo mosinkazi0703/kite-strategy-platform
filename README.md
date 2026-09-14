@@ -15,4 +15,17 @@ python -m kite_strategy_platform.cli validate
 
 Credentials belong only in environment variables or the untracked `.env`. Use Asia/Kolkata timestamps, exact contract IDs, and actual instrument-master expiries. Runtime data and logs are excluded from Git.
 
+## Start paper-mode collection
+
+```powershell
+$env:KITE_API_KEY = "your_api_key"
+$env:KITE_ACCESS_TOKEN = "your_daily_access_token"
+$env:KITE_TRADING_MODE = "paper"
+$env:KITE_INSTRUMENT_TOKENS = "256265,260105"
+$env:PYTHONPATH = "src"
+& "C:\Program Files\LibreOffice\program\python.exe" -m kite_strategy_platform.cli start-paper
+```
+
+Ticks are appended to `runtime/data/raw_ticks/ticks.jsonl`; no order API is called.
+
 See `docs/STRATEGY_RULES.md`, `docs/DATA_SCHEMA.md`, and `docs/OPERATIONS.md` for the implementation contract and smoke-test checklist.

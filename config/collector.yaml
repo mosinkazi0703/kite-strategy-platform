@@ -1,0 +1,7 @@
+runtime:
+  root: runtime
+collector:
+  instrument_tokens: []
+  mode: full
+  reconnect: true
+  max_retries: 8
