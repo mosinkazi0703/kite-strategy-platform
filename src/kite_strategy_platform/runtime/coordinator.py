@@ -14,8 +14,13 @@ class PaperTradingCoordinator:
     def subscribe_underlying_first(self):
         if not hasattr(self,"rows"): raise RuntimeError("instrument master must be loaded first")
         configured=self.configs[0]["strategy"]; symbol=configured["underlying"]
-        rows=[r for r in self.rows if r.get("tradingsymbol")==symbol and r.get("exchange")==configured.get("exchange","NSE")]
-        if len(rows)!=1: raise ValueError(f"expected one underlying contract, found {len(rows)}")
+        exchange=configured.get("exchange","NSE")
+        exact=[r for r in self.rows if r.get("tradingsymbol")==symbol and r.get("exchange")==exchange]
+        index_50=[r for r in self.rows if r.get("tradingsymbol")==f"{symbol} 50" and r.get("exchange")==exchange]
+        rows=exact or index_50
+        if len(rows)!=1:
+            candidates=[r.get("tradingsymbol") for r in self.rows if r.get("exchange")==exchange and symbol in r.get("tradingsymbol","")][:10]
+            raise ValueError(f"expected one underlying contract for {symbol}, found {len(rows)}; candidates: {candidates}")
         self.underlying_token=int(rows[0]["instrument_token"]); self.stage="UNDERLYING_SUBSCRIBED"; return (self.underlying_token,)
     def capture_open(self,quote):
         if self.stage!="UNDERLYING_SUBSCRIBED": raise RuntimeError("underlying must be subscribed first")
