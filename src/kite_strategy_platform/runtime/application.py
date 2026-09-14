@@ -1,0 +1,16 @@
+import signal
+from .loader import load_enabled_strategies
+from .session import PaperSession
+from kite_strategy_platform.collector.live import LiveCollector
+class UnattendedPaperApplication:
+    def __init__(self,tokens,root="runtime",config_dir="config"):
+        self.session=PaperSession(root); self.configs=load_enabled_strategies(config_dir); self.last_quotes={}
+        self.collector=LiveCollector(tokens,root,on_quote=self.on_quote)
+        for x in self.configs:
+            if x.get("enabled"): self.session.event("strategy_loaded",strategy_id=x.get("strategy",{}).get("id"),config=x["_path"])
+    def on_quote(self,quote): self.last_quotes[quote.contract_id]=quote
+    def stop(self,*_): self.session.event("shutdown",reason="signal"); self.session.report()
+    def run(self):
+        signal.signal(signal.SIGINT,self.stop); signal.signal(signal.SIGTERM,self.stop); self.session.event("paper_session_start",strategies=[x.get("strategy",{}).get("id") for x in self.configs if x.get("enabled")])
+        try: self.collector.run()
+        finally: self.session.report()
