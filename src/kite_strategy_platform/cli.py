@@ -31,6 +31,7 @@ def main():
                 from datetime import date
                 app.collector.expand(coordinator.resolved_subscription_pairs(date.today()))
                 composition=coordinator.start_paper()
+                composition.session.event("reference_captured",price=opening,kind=coordinator.reference_kind)
                 from .runtime.lifecycle import PaperLifecycle
                 lifecycle=PaperLifecycle(composition.session,composition.universe)
             if coordinator.composition:

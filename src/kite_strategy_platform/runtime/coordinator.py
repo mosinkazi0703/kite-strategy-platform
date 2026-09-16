@@ -25,8 +25,10 @@ class PaperTradingCoordinator:
     def capture_open(self,quote):
         if self.stage!="UNDERLYING_SUBSCRIBED": raise RuntimeError("underlying must be subscribed first")
         local=quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata")).time()
-        if (local.hour,local.minute)!=(9,15): raise ValueError("reference quote must be from 09:15 Asia/Kolkata")
-        self.opening_price=quote.last; self.stage="OPEN_CAPTURED"; return self.opening_price
+        if (local.hour,local.minute)<(9,15): raise ValueError("reference quote must not be before 09:15 Asia/Kolkata")
+        self.opening_price=quote.last
+        self.reference_kind="opening_0915" if (local.hour,local.minute)==(9,15) else "late_start_reference"
+        self.stage="OPEN_CAPTURED"; return self.opening_price
     def build_option_universe(self,today,timeframe="weekly",strike_step=None,hedge_distance=6):
         if self.stage!="OPEN_CAPTURED": raise RuntimeError("09:15 opening price required")
         symbol=self.configs[0]["strategy"]["underlying"]; self.composition=LivePaperComposition(self.rows,symbol,self.root); u=self.composition.build_universe(self.opening_price,today,timeframe,strike_step,hedge_distance); self.stage="OPTIONS_SUBSCRIBED"; return u
@@ -39,5 +41,5 @@ class PaperTradingCoordinator:
     def on_underlying_quote(self, quote):
         if self.stage=="UNDERLYING_SUBSCRIBED" and quote.last is not None:
             local=quote.timestamp.astimezone(ZoneInfo("Asia/Kolkata"))
-            if (local.hour,local.minute)==(9,15): return self.capture_open(quote)
+            if (local.hour,local.minute)>=(9,15): return self.capture_open(quote)
         return None
