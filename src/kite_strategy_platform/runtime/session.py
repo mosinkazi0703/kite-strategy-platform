@@ -11,7 +11,9 @@ class PaperSession:
         path=self.root/"paper"/"events.jsonl"; path.parent.mkdir(parents=True,exist_ok=True)
         with path.open("a",encoding="utf-8") as f: f.write(json.dumps(row,default=str)+"\n")
     def record_trade(self, trade):
-        row=self.ledger.record(trade); path=self.root/"paper"/"trades.jsonl"; path.parent.mkdir(parents=True,exist_ok=True)
+        row=self.ledger.record(trade)
+        if row is None: return None
+        path=self.root/"paper"/"trades.jsonl"; path.parent.mkdir(parents=True,exist_ok=True)
         with path.open("a",encoding="utf-8") as f: f.write(json.dumps(row,default=str)+"\n")
         return row
     def report(self):

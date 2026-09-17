@@ -12,7 +12,7 @@ class PaperLifecycle:
     def close(self,sid,p,reason,pnl):
         if p.state=="CLOSED": return
         p.state="CLOSED"; p.exit_reason=reason
-        self.session.record_trade({"strategy_id":sid,"gross_pnl":pnl,"orders":len(p.legs)*2,"turnover":sum(p.entries.values()),"exit_reason":reason,"margin_required":getattr(p,"margin",None)})
+        self.session.record_trade({"record_id":f"{sid}:{id(p)}","strategy_id":sid,"gross_pnl":pnl,"orders":len(p.legs)*2,"turnover":sum(p.entries.values()),"exit_reason":reason,"margin_required":getattr(p,"margin",None)})
         self.session.event("exit",strategy_id=sid,reason=reason,pnl=pnl)
     def mark(self,quotes,now,iv_change=0,delta=0):
         for sid,p in self.positions.items():
