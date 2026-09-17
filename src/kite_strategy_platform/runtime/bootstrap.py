@@ -43,6 +43,8 @@ class MarketBootstrap:
         actual={(c.expiry,c.strike,c.option_type) for c in contracts}
         if expected!=actual: raise ValueError(f"incomplete option chain: missing {sorted(expected-actual)}")
         underlying=next((r for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==self.symbol),None)
+        if not underlying:
+            underlying=next((r for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==f"{self.symbol} 50"),None)
         tokens=tuple(sorted({int(r["instrument_token"]) for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==self.symbol} | {c.instrument_token for c in contracts}))
         if not underlying: raise ValueError("underlying instrument is missing")
         return MarketUniverse(to_contract(underlying),atm,expiries,contracts,tokens)
