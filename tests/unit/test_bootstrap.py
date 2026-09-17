@@ -14,3 +14,10 @@ def test_bootstrap_selects_atm_expiries_and_tokens():
 def test_opening_price_requires_0915():
     b=MarketBootstrap(rows(),"NIFTY")
     assert b.opening_price([Quote("1",datetime(2026,1,1,9,15),last=20020)])==20020
+
+def test_bootstrap_uses_modal_strike_interval_not_irregular_gap():
+    data=rows()
+    for expiry in ("2026-01-08","2026-01-15"):
+        for typ in ("CE","PE"):
+            data.append({"exchange":"NFO","tradingsymbol":f"ODD{typ}","instrument_token":"99","expiry":expiry,"strike":"20005","instrument_type":typ,"lot_size":"65","tick_size":".05","name":"NIFTY"})
+    assert MarketBootstrap(data,"NIFTY").build(20020,date(2026,1,1),hedge_distance=1).atm_strike==20000

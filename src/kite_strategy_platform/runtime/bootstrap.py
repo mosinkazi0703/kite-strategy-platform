@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from kite_strategy_platform.kite.instrument_master import to_contract
@@ -28,7 +29,14 @@ class MarketBootstrap:
     def build(self, spot, today, mode="weekly", strike_step=None, hedge_distance=6):
         options=[to_contract(r) for r in self.rows if r.get("exchange")==self.derivative_exchange and r.get("instrument_type") in ("CE","PE") and (r.get("name")==self.symbol or r.get("tradingsymbol","").startswith(self.symbol))]
         if not options: raise ValueError("no option contracts found for configured underlying")
-        step=strike_step or min(abs(a.strike-b.strike) for a in options for b in options if a.strike!=b.strike)
+        if strike_step:
+            step=strike_step
+        else:
+            active_expiry=self.select_expiries(today,mode)[0]
+            strikes=sorted({c.strike for c in options if c.expiry==active_expiry})
+            gaps=[round(b-a,6) for a,b in zip(strikes,strikes[1:]) if b>a]
+            if not gaps: raise ValueError("cannot infer option strike interval")
+            step=Counter(gaps).most_common(1)[0][0]
         atm=round(spot/step)*step; expiries=self.select_expiries(today,mode); required={atm,atm+hedge_distance*step,atm-hedge_distance*step}
         contracts=tuple(c for c in options if c.expiry in expiries and c.strike in required)
         expected={(e,s,t) for e in expiries for s in required for t in ("CE","PE")}
