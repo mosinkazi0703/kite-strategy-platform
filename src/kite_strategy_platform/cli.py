@@ -36,7 +36,9 @@ def main():
                 app.session=composition.session
                 composition.session.event("reference_captured",price=opening,kind=coordinator.reference_kind)
                 from .runtime.lifecycle import PaperLifecycle
-                lifecycle=PaperLifecycle(composition.session,composition.universe)
+                from .kite.margin_client import KiteMarginClient
+                max_margin=float(os.environ["KITE_MAX_PAPER_MARGIN"]) if os.getenv("KITE_MAX_PAPER_MARGIN") else None
+                lifecycle=PaperLifecycle(composition.session,composition.universe,margin_client=KiteMarginClient(coordinator.api_key,coordinator.access_token),max_margin=max_margin)
             if coordinator.composition:
                 coordinator.composition.on_quote(quote)
                 if lifecycle and "dynamic_calendar_spread_v1" not in lifecycle.positions:
