@@ -45,6 +45,6 @@ class MarketBootstrap:
         underlying=next((r for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==self.symbol),None)
         if not underlying:
             underlying=next((r for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==f"{self.symbol} 50"),None)
-        tokens=tuple(sorted({int(r["instrument_token"]) for r in self.rows if r.get("exchange")==self.exchange and r.get("tradingsymbol")==self.symbol} | {c.instrument_token for c in contracts}))
+        tokens=tuple(sorted({int(underlying["instrument_token"])} | {c.instrument_token for c in contracts}))
         if not underlying: raise ValueError("underlying instrument is missing")
         return MarketUniverse(to_contract(underlying),atm,expiries,contracts,tokens)
