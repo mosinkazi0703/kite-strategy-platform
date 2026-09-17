@@ -26,7 +26,7 @@ $env:PYTHONPATH = "src"
 & "C:\Program Files\LibreOffice\program\python.exe" -m kite_strategy_platform.cli start-paper
 ```
 
-Ticks are appended to `runtime/data/raw_ticks/ticks.jsonl`; completed candles are partitioned under `runtime/data/candles/interval=1minute/trading_date=YYYY-MM-DD/candles.parquet`. No order API is called.
+Ticks are appended to `runtime/data/raw_ticks/ticks.jsonl`; completed candles are immutable Parquet parts under `runtime/data/candles/interval=1minute/trading_date=YYYY-MM-DD/part-*.parquet`. No order API is called.
 
 Download the daily instrument master before starting paper mode:
 

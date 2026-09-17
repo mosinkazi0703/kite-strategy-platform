@@ -3,9 +3,9 @@ from kite_strategy_platform.execution.paper_broker import PaperBroker
 from kite_strategy_platform.execution.fill_model import BidAskFillModel
 from kite_strategy_platform.strategies.legs import build_four_legs
 class PaperLifecycle:
-    def __init__(self,session,universe,target=1.0,stop=.3,margin_client=None,max_margin=None):
+    def __init__(self,session,universe,target=1.0,stop=.3,margin_client=None,max_margin=None,max_quote_age_seconds=5):
         self.session=session; self.universe=universe; self.margin_client=margin_client; self.max_margin=max_margin
-        self.engine=PaperTradingEngine(PaperBroker(BidAskFillModel()),target,stop,margin_client,max_margin); self.positions={}
+        self.engine=PaperTradingEngine(PaperBroker(BidAskFillModel()),target,stop,margin_client,max_margin); self.positions={}; self.max_quote_age_seconds=max_quote_age_seconds
     def _record_entry(self,sid,p):
         self.session.event("paper_entry",strategy_id=sid,margin_required=p.margin_required,margin_details=p.margin,initial_cashflow_rupees=p.initial_cashflow_rupees())
     def reversal_entry(self,direction,quotes):
@@ -21,7 +21,7 @@ class PaperLifecycle:
     def mark(self,quotes,now,iv_change=0,delta=0):
         for sid,p in self.positions.items():
             if p.state=="CLOSED": continue
-            prices={k:quotes[k].last for k in p.entries if k in quotes}; points=p.pnl_points(prices); pnl=p.pnl_rupees(prices)
+            prices={k:quotes[k].last for k in p.entries if k in quotes and (now-quotes[k].timestamp).total_seconds()<=self.max_quote_age_seconds}; points=p.pnl_points(prices); pnl=p.pnl_rupees(prices)
             if pnl is None: continue
             credit=p.initial_cashflow_rupees()
             reason="TARGET" if pnl>=abs(credit)*self.engine.target else "STOP" if pnl<=-abs(credit)*self.engine.stop else None

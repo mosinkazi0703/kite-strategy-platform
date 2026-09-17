@@ -19,7 +19,12 @@ class LiveCollector:
             if previous and previous < minute:
                 candle=self.builder.close(q.contract_id,previous)
                 if candle:
-                    day=previous.date().isoformat(); self.store.append_table(f"data/candles/interval=1minute/trading_date={day}/candles.parquet",[candle.__dict__])
+                    day=previous.date().isoformat()
+                    # Candle persistence must never block live quote handling.
+                    try:
+                        self.store.append_parquet_part(f"data/candles/interval=1minute/trading_date={day}",[candle.__dict__])
+                    except Exception as error:
+                        self.store.append_jsonl("logs/events.jsonl",[{"event":"candle_storage_error","at":datetime.now(timezone.utc).isoformat(),"contract_id":q.contract_id,"minute":previous.isoformat(),"error_type":type(error).__name__,"error":str(error)}])
                     if self.on_candle: self.on_candle(candle)
             self.last_minute[q.contract_id]=minute
         if rows: self.store.append_jsonl("data/raw_ticks/ticks.jsonl",rows)

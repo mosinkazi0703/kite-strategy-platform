@@ -1,5 +1,5 @@
 from pathlib import Path
-import json, os, tempfile
+import json, os, tempfile, uuid
 
 class AppendOnlyStore:
     def __init__(self, root="runtime"): self.root=Path(root)
@@ -15,11 +15,22 @@ class AppendOnlyStore:
             frame.to_parquet(tmp, index=False); os.replace(tmp,path)
         except ImportError:
             raise RuntimeError("Parquet storage requires pandas and pyarrow")
-    def append_table(self, relative, records):
+    def append_parquet_part(self, relative_directory, records):
+        """Append an immutable Parquet part without reopening/replacing prior data.
+
+        A unique destination avoids Windows file locks on a shared ``candles.parquet``
+        file. A failed write can leave only an ignored temporary file.
+        """
         try:
             import pandas as pd
-            path=self.root/relative
-            old=pd.read_parquet(path) if path.exists() else pd.DataFrame()
-            self.write_table(relative,pd.concat([old,pd.DataFrame(records)],ignore_index=True).to_dict("records"))
+            directory=self.root/relative_directory; directory.mkdir(parents=True,exist_ok=True)
+            final=directory/f"part-{uuid.uuid4().hex}.parquet"
+            fd,tmp=tempfile.mkstemp(dir=directory,suffix=".tmp"); os.close(fd)
+            try:
+                pd.DataFrame(records).to_parquet(tmp,index=False)
+                os.replace(tmp,final)
+            finally:
+                if os.path.exists(tmp): os.unlink(tmp)
+            return final
         except ImportError:
             raise RuntimeError("Parquet storage requires pandas and pyarrow")
