@@ -28,6 +28,16 @@ $env:PYTHONPATH = "src"
 
 Ticks are appended to `runtime/data/raw_ticks/ticks.jsonl`; completed candles are immutable Parquet parts under `runtime/data/candles/interval=1minute/trading_date=YYYY-MM-DD/part-*.parquet`. No order API is called.
 
+## Local paper dashboard
+
+While `run-all` is running, start this read-only dashboard in a second PowerShell window and open `http://127.0.0.1:8765`:
+
+```powershell
+python -m kite_strategy_platform.cli dashboard
+```
+
+It refreshes every two seconds and displays collector freshness, open paper positions, Kite basket margin, gross rupee P&L, leg bid/ask quotes, and recent lifecycle events.
+
 Download the daily instrument master before starting paper mode:
 
 ```powershell

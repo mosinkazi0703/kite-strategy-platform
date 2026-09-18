@@ -8,6 +8,7 @@ def main():
     demo=sub.add_parser("self-test-paper"); demo.add_argument("--root",default="runtime")
     ins=sub.add_parser("download-instruments"); ins.add_argument("--root",default=os.getenv("KITE_RUNTIME_ROOT","runtime")); ins.add_argument("--force",action="store_true")
     r=sub.add_parser("list-strategies"); r.add_argument("--config-dir",default="config")
+    d=sub.add_parser("dashboard"); d.add_argument("--root",default=os.getenv("KITE_RUNTIME_ROOT","runtime")); d.add_argument("--host",default="127.0.0.1"); d.add_argument("--port",type=int,default=8765)
     a=p.parse_args()
     if a.command == "validate": print(load_config(a.strategy, a.trading).model_dump_json(indent=2))
     elif a.command == "start-paper":
@@ -74,6 +75,9 @@ def main():
         from .runtime.loader import load_enabled_strategies
         for item in load_enabled_strategies(a.config_dir):
             if item.get("enabled"): print(item.get("strategy",{}).get("id",item["_path"]))
+    elif a.command == "dashboard":
+        from .dashboard.server import serve
+        serve(a.root,a.host,a.port)
 
 if __name__ == "__main__":
     main()
