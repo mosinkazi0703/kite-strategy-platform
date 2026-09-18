@@ -22,3 +22,12 @@ def test_position_pnl_rupees_uses_leg_quantity():
     position=PaperTradingEngine(PaperBroker(BidAskFillModel()),allow_debit=True).open([Leg(cs[0],"BUY",50)],{cid:Quote(cid,datetime.now(),last=10,bid=9,ask=10)})
     assert position.pnl_points({cid:12}) == 2
     assert position.pnl_rupees({cid:12}) == 100
+
+def test_nested_kite_basket_margin_uses_final_total():
+    class NestedMargin:
+        def margin_for_legs(self,_): return {"initial":{"total":100000},"final":{"total":50000}}
+    cs=[Contract("NFO","x",1,date(2026,1,8),100,"CE",50,.05)]
+    from kite_strategy_platform.strategies.legs import Leg
+    cid=cs[0].contract_id; quote=Quote(cid,datetime.now(),last=10,bid=9,ask=10)
+    position=PaperTradingEngine(PaperBroker(BidAskFillModel()),margin_client=NestedMargin(),max_margin=50000,allow_debit=True).open([Leg(cs[0],"BUY",50)],{cid:quote})
+    assert position.margin_required == 50000.0

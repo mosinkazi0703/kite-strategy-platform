@@ -1,5 +1,13 @@
 from dataclasses import dataclass, field
 from kite_strategy_platform.domain.orders import OrderIntent
+def margin_total(margin):
+    """Return Kite's numeric basket requirement from compact or detailed responses."""
+    if not isinstance(margin,dict): return None
+    for key in ("final","initial","total"):
+        value=margin.get(key)
+        if isinstance(value,dict): value=value.get("total")
+        if value is not None: return float(value)
+    return None
 @dataclass
 class Position:
     legs: list; entries: dict = field(default_factory=dict); state: str = "OPEN"; exit_reason: str|None=None
@@ -26,7 +34,7 @@ class PaperTradingEngine:
     def __init__(self, broker, target=1.0, stop=0.3, margin_client=None, max_margin=None, allow_debit=False): self.broker=broker; self.target=target; self.stop=stop; self.margin_client=margin_client; self.max_margin=max_margin; self.allow_debit=allow_debit
     def open(self, legs, quotes):
         margin=self.margin_client.margin_for_legs(legs) if self.margin_client else None
-        required=(margin or {}).get("final",(margin or {}).get("initial",(margin or {}).get("total"))) if isinstance(margin,dict) else None
+        required=margin_total(margin)
         if self.max_margin is not None and required is not None and required>self.max_margin: raise ValueError(f"margin limit exceeded: {required} > {self.max_margin}")
         entries={}
         for leg in legs:
