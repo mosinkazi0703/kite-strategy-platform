@@ -31,3 +31,5 @@ class LiveCollector:
     def run(self):
         self.store.append_jsonl("logs/events.jsonl",[{"event":"collector_start","at":datetime.now(timezone.utc).isoformat()}])
         self.client=KiteWebSocketClient(os.environ["KITE_API_KEY"],os.environ["KITE_ACCESS_TOKEN"],self.on_frame,on_connected=self.on_connected); self.client.run(self.tokens,self.mode)
+    def stop(self):
+        if self.client: self.client.close()

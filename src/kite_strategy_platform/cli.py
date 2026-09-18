@@ -24,8 +24,14 @@ def main():
         coordinator.load_instruments(); coordinator.subscribe_underlying_first()
         app=UnattendedPaperApplication([coordinator.underlying_token],a.root,a.config_dir)
         lifecycle=None
+        calendar_entry_attempted=False
+        def reject_entry(strategy_id,error):
+            response=getattr(error,"response",None); details={"strategy_id":strategy_id,"reason":"ENTRY_SETUP_FAILED","error_type":type(error).__name__}
+            if response is not None:
+                details["http_status"]=response.status_code; details["http_body"]=response.text[:500]
+            coordinator.composition.session.event("entry_rejected",**details)
         def route_quote(quote):
-            nonlocal lifecycle
+            nonlocal lifecycle,calendar_entry_attempted
             opening=coordinator.on_underlying_quote(quote)
             if opening is not None:
                 from datetime import date
@@ -41,15 +47,19 @@ def main():
                 lifecycle=PaperLifecycle(composition.session,composition.universe,margin_client=KiteMarginClient(coordinator.api_key,coordinator.access_token),max_margin=max_margin)
             if coordinator.composition:
                 coordinator.composition.on_quote(quote)
-                if lifecycle and "dynamic_calendar_spread_v1" not in lifecycle.positions:
+                if lifecycle and not calendar_entry_attempted and "dynamic_calendar_spread_v1" not in lifecycle.positions:
                     required={c.contract_id for c in coordinator.composition.universe.contracts}
-                    if required.issubset(coordinator.composition.quotes): lifecycle.calendar_entry(coordinator.composition.quotes)
+                    if required.issubset(coordinator.composition.quotes):
+                        calendar_entry_attempted=True
+                        try: lifecycle.calendar_entry(coordinator.composition.quotes)
+                        except Exception as error: reject_entry("dynamic_calendar_spread_v1",error)
                 if lifecycle: lifecycle.mark(coordinator.composition.quotes,quote.timestamp)
         def route_candle(candle):
             if not lifecycle or candle.contract_id != str(coordinator.underlying_token): return
             trigger=coordinator.handlers["reversal_credit_v1"].trigger(coordinator.opening_price,candle)
             if trigger and trigger.direction in ("UP","DOWN") and "reversal_credit_v1" not in lifecycle.positions:
-                lifecycle.reversal_entry(trigger.direction,coordinator.composition.quotes)
+                try: lifecycle.reversal_entry(trigger.direction,coordinator.composition.quotes)
+                except Exception as error: reject_entry("reversal_credit_v1",error)
         app.collector.on_quote=route_quote
         app.collector.on_candle=route_candle
         app.run()
